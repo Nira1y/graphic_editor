@@ -1,0 +1,11 @@
+C:\Users\inary\OneDrive\Desktop\graphic_editor\graphic_editor\bin\Debug\graphic_editor.exe.config
+C:\Users\inary\OneDrive\Desktop\graphic_editor\graphic_editor\bin\Debug\graphic_editor.exe
+C:\Users\inary\OneDrive\Desktop\graphic_editor\graphic_editor\bin\Debug\graphic_editor.pdb
+C:\Users\inary\OneDrive\Desktop\graphic_editor\graphic_editor\obj\Debug\graphic_editor.csproj.AssemblyReference.cache
+C:\Users\inary\OneDrive\Desktop\graphic_editor\graphic_editor\obj\Debug\graphic_editor.Form1.resources
+C:\Users\inary\OneDrive\Desktop\graphic_editor\graphic_editor\obj\Debug\graphic_editor.Properties.Resources.resources
+C:\Users\inary\OneDrive\Desktop\graphic_editor\graphic_editor\obj\Debug\graphic_editor.csproj.GenerateResource.cache
+C:\Users\inary\OneDrive\Desktop\graphic_editor\graphic_editor\obj\Debug\graphic_editor.csproj.CoreCompileInputs.cache
+C:\Users\inary\OneDrive\Desktop\graphic_editor\graphic_editor\obj\Debug\graphic_editor.exe
+C:\Users\inary\OneDrive\Desktop\graphic_editor\graphic_editor\obj\Debug\graphic_editor.pdb
+C:\Users\inary\OneDrive\Desktop\graphic_editor\graphic_editor\obj\Debug\graphic_editor.exe.config
