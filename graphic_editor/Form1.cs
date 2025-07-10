@@ -8,16 +8,26 @@ namespace graphic_editor
     public partial class Form1 : Form
     {
         Bitmap picture;
+        Bitmap tempPicture;
+        Bitmap previewPicture;
         int x1, y1;
+        int xclick1, yclick1;
         Stack<Bitmap> undoStack = new Stack<Bitmap>();
         bool isFileOpened = false;
+        string mode;
+
         public Form1()
         {
             InitializeComponent();
             picture = new Bitmap(1920, 1000);
+            tempPicture = new Bitmap(1920, 1000);
+            previewPicture = new Bitmap(1920, 1000);
+            using (Graphics g = Graphics.FromImage(picture)) g.Clear(Color.White);
+            using (Graphics g = Graphics.FromImage(tempPicture)) g.Clear(Color.White);
+            using (Graphics g = Graphics.FromImage(previewPicture)) g.Clear(Color.White);
             x1 = y1 = 0;
             SaveState(true);
-
+            mode = "Карандаш";
             colorDialog1.FullOpen = false;
             colorDialog1.AnyColor = true;
             colorDialog1.Color = button4.BackColor;
@@ -31,8 +41,76 @@ namespace graphic_editor
                 isFileOpened = false;
             }
             undoStack.Push(new Bitmap(picture));
-    
         }
+
+        private void pictureBox1_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                Pen p = new Pen(button4.BackColor, trackBar1.Value);
+                p.StartCap = System.Drawing.Drawing2D.LineCap.Round;
+                p.EndCap = System.Drawing.Drawing2D.LineCap.Round;
+
+                if (mode == "Карандаш")
+                {
+                    using (Graphics g = Graphics.FromImage(picture))
+                    {
+                        g.DrawLine(p, x1, y1, e.X, e.Y);
+                    }
+                    pictureBox1.Image = picture;
+                }
+                else
+                {
+                    using (Graphics g = Graphics.FromImage(previewPicture))
+                    {
+                        g.DrawImage(picture, 0, 0);
+
+                        int x = Math.Min(xclick1, e.X);
+                        int y = Math.Min(yclick1, e.Y);
+                        int width = Math.Abs(e.X - xclick1);
+                        int height = Math.Abs(e.Y - yclick1);
+
+                        if (mode == "Прямоугольник")
+                            g.DrawRectangle(p, x, y, width, height);
+                        else if (mode == "Овал")
+                            g.DrawEllipse(p, x, y, width, height);
+                        else if (mode == "Прямая линия")
+                            g.DrawLine(p, xclick1, yclick1, e.X, e.Y);
+                    }
+                    pictureBox1.Image = previewPicture;
+                }
+
+                p.Dispose();
+            }
+            x1 = e.X;
+            y1 = e.Y;
+        }
+
+        private void pictureBox1_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (mode != "Карандаш" && e.Button == MouseButtons.Left)
+            {
+                using (Graphics g = Graphics.FromImage(picture))
+                using (Pen p = new Pen(button4.BackColor, trackBar1.Value))
+                {
+                    int x = Math.Min(xclick1, e.X);
+                    int y = Math.Min(yclick1, e.Y);
+                    int width = Math.Abs(e.X - xclick1);
+                    int height = Math.Abs(e.Y - yclick1);
+
+                    if (mode == "Прямоугольник")
+                        g.DrawRectangle(p, x, y, width, height);
+                    else if (mode == "Овал")
+                        g.DrawEllipse(p, x, y, width, height);
+                    else if (mode == "Прямая линия")
+                        g.DrawLine(p, xclick1, yclick1, e.X, e.Y);
+                }
+                pictureBox1.Image = picture;
+                SaveState();
+            }
+        }
+
+
         private void buttonSelectColor_Click(object sender, EventArgs e)
         {
             if (colorDialog1.ShowDialog() == DialogResult.OK)
@@ -44,7 +122,7 @@ namespace graphic_editor
         private void сохранитьToolStripMenuItem_Click(object sender, EventArgs e)
         {
             saveFileDialog1.ShowDialog();
-            if(saveFileDialog1.FileName != " ")
+            if (saveFileDialog1.FileName != " ")
             {
                 picture.Save(saveFileDialog1.FileName);
             }
@@ -62,24 +140,6 @@ namespace graphic_editor
             }
         }
 
-        private void pictureBox1_MouseUp(object sender, MouseEventArgs e)
-        {
-            SaveState();
-        }      
-        private void pictureBox1_MouseMove(object sender, MouseEventArgs e)
-        {
-            Pen p = new Pen(button4.BackColor, trackBar1.Value);
-            p.StartCap = System.Drawing.Drawing2D.LineCap.Round;
-            p.EndCap = System.Drawing.Drawing2D.LineCap.Round;
-            Graphics g = Graphics.FromImage(picture);
-            if (e.Button == MouseButtons.Left)
-            {
-                g.DrawLine(p, x1, y1, e.X, e.Y);
-                pictureBox1.Image = picture;
-            }
-            x1 = e.X;
-            y1 = e.Y;
-        }
         private void ClearCanvas()
         {
             using (Graphics g = Graphics.FromImage(picture)) g.Clear(Color.White);
@@ -90,6 +150,32 @@ namespace graphic_editor
         private void очиститьToolStripMenuItem_Click(object sender, EventArgs e)
         {
             ClearCanvas();
+        }
+
+        private void карандашToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            mode = "Карандаш";
+        }
+
+        private void прямоугольникToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            mode = "Прямоугольник";
+        }
+
+        private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
+        {
+            xclick1 = e.X;
+            yclick1 = e.Y;
+        }
+
+        private void прямаяЛинияToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            mode = "Прямая линия";
+        }
+
+        private void овалToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            mode = "Овал";
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
@@ -103,6 +189,5 @@ namespace graphic_editor
             }
             return base.ProcessCmdKey(ref msg, keyData);
         }
-
     }
 }
