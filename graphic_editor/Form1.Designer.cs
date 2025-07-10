@@ -50,6 +50,7 @@
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
             this.colorDialog1 = new System.Windows.Forms.ColorDialog();
+            this.button1 = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.trackBar1)).BeginInit();
             this.menuStrip1.SuspendLayout();
@@ -60,6 +61,7 @@
             // 
             // panel1
             // 
+            this.panel1.Controls.Add(this.button1);
             this.panel1.Controls.Add(this.trackBar1);
             this.panel1.Controls.Add(this.button4);
             this.panel1.Controls.Add(this.buttonSelectorColor);
@@ -78,6 +80,7 @@
             this.trackBar1.Size = new System.Drawing.Size(159, 56);
             this.trackBar1.TabIndex = 4;
             this.trackBar1.Value = 1;
+            this.trackBar1.ValueChanged += new System.EventHandler(this.trackBar1_ValueChanged);
             // 
             // button4
             // 
@@ -163,28 +166,28 @@
             // карандашToolStripMenuItem
             // 
             this.карандашToolStripMenuItem.Name = "карандашToolStripMenuItem";
-            this.карандашToolStripMenuItem.Size = new System.Drawing.Size(224, 26);
+            this.карандашToolStripMenuItem.Size = new System.Drawing.Size(203, 26);
             this.карандашToolStripMenuItem.Text = "Карандаш";
             this.карандашToolStripMenuItem.Click += new System.EventHandler(this.карандашToolStripMenuItem_Click);
             // 
             // прямаяЛинияToolStripMenuItem
             // 
             this.прямаяЛинияToolStripMenuItem.Name = "прямаяЛинияToolStripMenuItem";
-            this.прямаяЛинияToolStripMenuItem.Size = new System.Drawing.Size(224, 26);
+            this.прямаяЛинияToolStripMenuItem.Size = new System.Drawing.Size(203, 26);
             this.прямаяЛинияToolStripMenuItem.Text = "Прямая линия";
             this.прямаяЛинияToolStripMenuItem.Click += new System.EventHandler(this.прямаяЛинияToolStripMenuItem_Click);
             // 
             // прямоугольникToolStripMenuItem
             // 
             this.прямоугольникToolStripMenuItem.Name = "прямоугольникToolStripMenuItem";
-            this.прямоугольникToolStripMenuItem.Size = new System.Drawing.Size(224, 26);
+            this.прямоугольникToolStripMenuItem.Size = new System.Drawing.Size(203, 26);
             this.прямоугольникToolStripMenuItem.Text = "Прямоугольник";
             this.прямоугольникToolStripMenuItem.Click += new System.EventHandler(this.прямоугольникToolStripMenuItem_Click);
             // 
             // овалToolStripMenuItem
             // 
             this.овалToolStripMenuItem.Name = "овалToolStripMenuItem";
-            this.овалToolStripMenuItem.Size = new System.Drawing.Size(224, 26);
+            this.овалToolStripMenuItem.Size = new System.Drawing.Size(203, 26);
             this.овалToolStripMenuItem.Text = "Овал";
             this.овалToolStripMenuItem.Click += new System.EventHandler(this.овалToolStripMenuItem_Click);
             // 
@@ -217,6 +220,16 @@
             // saveFileDialog1
             // 
             this.saveFileDialog1.DefaultExt = "bmp";
+            // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(180, 52);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(26, 25);
+            this.button1.TabIndex = 5;
+            this.button1.Text = "button1";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
             // Form1
             // 
@@ -265,6 +278,7 @@
         private System.Windows.Forms.ToolStripMenuItem прямаяЛинияToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem прямоугольникToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem овалToolStripMenuItem;
+        private System.Windows.Forms.Button button1;
     }
 }
 

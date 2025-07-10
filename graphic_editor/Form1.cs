@@ -15,7 +15,8 @@ namespace graphic_editor
         Stack<Bitmap> undoStack = new Stack<Bitmap>();
         bool isFileOpened = false;
         string mode;
-
+        Pen currentPen;
+        bool isEraser = false;
         public Form1()
         {
             InitializeComponent();
@@ -31,8 +32,26 @@ namespace graphic_editor
             colorDialog1.FullOpen = false;
             colorDialog1.AnyColor = true;
             colorDialog1.Color = button4.BackColor;
+
+            UpdateCurrentPen();
         }
 
+        private void UpdateCurrentPen()
+        {
+            currentPen?.Dispose();
+            if (isEraser)
+            {
+                currentPen = new Pen(Color.White, trackBar1.Value);
+            }
+            else
+            {
+                currentPen = new Pen(button4.BackColor, trackBar1.Value);
+            }
+            currentPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
+            currentPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
+
+
+        }
         private void SaveState(bool isInitialState = false)
         {
             if (isFileOpened && !isInitialState)
@@ -47,15 +66,12 @@ namespace graphic_editor
         {
             if (e.Button == MouseButtons.Left)
             {
-                Pen p = new Pen(button4.BackColor, trackBar1.Value);
-                p.StartCap = System.Drawing.Drawing2D.LineCap.Round;
-                p.EndCap = System.Drawing.Drawing2D.LineCap.Round;
-
-                if (mode == "Карандаш")
+                
+                if (mode == "Карандаш" || mode == "Ластик")
                 {
                     using (Graphics g = Graphics.FromImage(picture))
                     {
-                        g.DrawLine(p, x1, y1, e.X, e.Y);
+                        g.DrawLine(currentPen, x1, y1, e.X, e.Y);
                     }
                     pictureBox1.Image = picture;
                 }
@@ -70,17 +86,21 @@ namespace graphic_editor
                         int width = Math.Abs(e.X - xclick1);
                         int height = Math.Abs(e.Y - yclick1);
 
-                        if (mode == "Прямоугольник")
-                            g.DrawRectangle(p, x, y, width, height);
-                        else if (mode == "Овал")
-                            g.DrawEllipse(p, x, y, width, height);
-                        else if (mode == "Прямая линия")
-                            g.DrawLine(p, xclick1, yclick1, e.X, e.Y);
+                        switch (mode)
+                        {
+                            case "Прямоугольник":
+                                g.DrawRectangle(currentPen, x, y, width, height);
+                                break;
+                            case "Овал":
+                                g.DrawEllipse(currentPen, x, y, width, height);
+                                break;
+                            case "Прямая линия":
+                                g.DrawLine(currentPen, xclick1, yclick1, e.X, e.Y);
+                                break;
+                        }
                     }
                     pictureBox1.Image = previewPicture;
                 }
-
-                p.Dispose();
             }
             x1 = e.X;
             y1 = e.Y;
@@ -98,16 +118,24 @@ namespace graphic_editor
                     int width = Math.Abs(e.X - xclick1);
                     int height = Math.Abs(e.Y - yclick1);
 
-                    if (mode == "Прямоугольник")
-                        g.DrawRectangle(p, x, y, width, height);
-                    else if (mode == "Овал")
-                        g.DrawEllipse(p, x, y, width, height);
-                    else if (mode == "Прямая линия")
-                        g.DrawLine(p, xclick1, yclick1, e.X, e.Y);
+                    switch (mode)
+                    {
+                        case "Прямоугольник":
+                            g.DrawRectangle(currentPen, x, y, width, height);
+                            break;
+                        case "Овал":
+                            g.DrawEllipse(currentPen, x, y, width, height);
+                            break;
+                        case "Прямая линия":
+                            g.DrawLine(currentPen, xclick1, yclick1, e.X, e.Y);
+                            break;
+
+                    }
                 }
                 pictureBox1.Image = picture;
-                SaveState();
+                
             }
+            SaveState();
         }
 
 
@@ -115,7 +143,10 @@ namespace graphic_editor
         {
             if (colorDialog1.ShowDialog() == DialogResult.OK)
             {
+                isEraser = false;
                 button4.BackColor = colorDialog1.Color;
+                button1.BackColor = Color.White;
+                UpdateCurrentPen();
             }
         }
 
@@ -173,11 +204,25 @@ namespace graphic_editor
             mode = "Прямая линия";
         }
 
+        
+
         private void овалToolStripMenuItem_Click(object sender, EventArgs e)
         {
             mode = "Овал";
         }
 
+        private void button1_Click(object sender, EventArgs e)
+        {
+            isEraser = !isEraser;
+            button1.BackColor = isEraser ? Color.DarkGray : Color.White;
+            mode = isEraser ? "Ластик" : "Карандаш";
+            UpdateCurrentPen();
+        }
+
+        private void trackBar1_ValueChanged(object sender, EventArgs e)
+        {
+            UpdateCurrentPen();
+        }
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
             if (keyData == (Keys.Control | Keys.Z) && undoStack.Count > 1)
