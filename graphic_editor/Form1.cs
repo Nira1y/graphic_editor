@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace graphic_editor
 {
@@ -15,6 +17,7 @@ namespace graphic_editor
         Stack<Bitmap> undoStack = new Stack<Bitmap>();
         bool isFileOpened = false;
         string mode;
+        string brushTexture = "Обычная";
         Pen currentPen;
         bool isEraser = false;
 
@@ -56,16 +59,30 @@ namespace graphic_editor
             if (isEraser)
             {
                 currentPen = new Pen(Color.White, trackBarEraser.Value);
+                currentPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
+                currentPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;  
             }
-            else
+            currentPen = new Pen(button4.BackColor, trackBarPen.Value);
+            switch (brushTexture)
             {
-                currentPen = new Pen(button4.BackColor, trackBarPen.Value);
+                case "Акварель":
+                    currentPen.StartCap = LineCap.Round;
+                    currentPen.EndCap = LineCap.Round;
+                    currentPen.LineJoin = LineJoin.Round;
+                    currentPen.Width = trackBarPen.Value;
+                    Color transparentColor = Color.FromArgb(50, button4.BackColor);
+                    currentPen.Color = transparentColor;
+                    break;
+
+                default:
+                    currentPen.StartCap = LineCap.Round;
+                    currentPen.EndCap = LineCap.Round;
+                    currentPen.LineJoin = LineJoin.Round;
+                    break;
             }
-            currentPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
-            currentPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
-
-
+               
         }
+        private Random random = new Random();
         private void SaveState(bool isInitialState = false)
         {
             if (isFileOpened && !isInitialState)
@@ -85,7 +102,38 @@ namespace graphic_editor
                 {
                     using (Graphics g = Graphics.FromImage(picture))
                     {
-                        g.DrawLine(currentPen, x1, y1, e.X, e.Y);
+                        if (brushTexture == "Акварель")
+                        {
+                            float distance = (float)Math.Sqrt(Math.Pow(e.X - x1, 2) + Math.Pow(e.Y - y1, 2));
+                            int steps = Math.Max(1, (int)(distance / 2));
+                            for (int i = 0; i <= steps; i++)
+                            {
+                                float t = (float)i / steps;
+                                int currentX = (int)(x1 + t * (e.X - x1));
+                                int currentY = (int)(y1 + t * (e.Y - y1));
+                                int maxRadius = (int)(currentPen.Width * 0.5f);
+                                for (int j = 0; j < 20; j++)
+                                {
+                                    int size = random.Next(maxRadius / 2, maxRadius);
+                                    int xOffset = random.Next(-size / 2, size / 2);
+                                    int yOffset = random.Next(-size / 2, size / 2);
+                                    int alpha = 10;
+
+                                    using (SolidBrush b = new SolidBrush(Color.FromArgb(alpha, button4.BackColor)))
+                                    {
+                                        g.FillEllipse(b,
+                                            currentX + xOffset - size / 2,
+                                            currentY + yOffset - size / 2,
+                                            size, size);
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            g.DrawLine(currentPen, x1, y1, e.X, e.Y);
+                        }
+                            
                     }
                     pictureBox1.Image = picture;
                 }
@@ -118,6 +166,7 @@ namespace graphic_editor
             }
             x1 = e.X;
             y1 = e.Y;
+
         }
 
         private void pictureBox1_MouseUp(object sender, MouseEventArgs e)
@@ -200,6 +249,7 @@ namespace graphic_editor
         private void прямоугольникToolStripMenuItem_Click(object sender, EventArgs e)
         {
             mode = "Прямоугольник";
+            brushTexture = null;
             isEraser = false;
             trackBarEraser.Visible = false;
             trackBarPen.Visible = true;
@@ -218,6 +268,7 @@ namespace graphic_editor
         {
             mode = "Прямая линия";
             isEraser = false;
+            brushTexture = null;
             trackBarEraser.Visible = false;
             trackBarPen.Visible = true;
             button1.BackColor = Color.White;
@@ -229,6 +280,7 @@ namespace graphic_editor
         {
             mode = "Овал";
             isEraser = false;
+            brushTexture = null;
             trackBarEraser.Visible = false;
             trackBarPen.Visible = true;
             button1.BackColor = Color.White;
@@ -244,12 +296,14 @@ namespace graphic_editor
             button1.BackColor = isEraser ? Color.DarkGray : Color.White;
             button2.BackColor = isEraser ? Color.White : Color.DarkGray;
             mode = "Ластик";
+            brushTexture = "Обычная";
             UpdateCurrentPen();
         }
 
         private void button2_Click(object sender, EventArgs e)
         {
             mode = "Карандаш";
+            brushTexture = "Обычная";
             isEraser = false;
             button1.BackColor = isEraser ? Color.DarkGray : Color.White;
             button2.BackColor = isEraser ? Color.White : Color.DarkGray;
@@ -267,7 +321,36 @@ namespace graphic_editor
         {
             UpdateCurrentPen();
         }
+        private void drawSelectionPreview()
+        {
 
+        }
+
+        private void Copy()
+        {
+
+        }
+
+        private void Paste()
+        {
+
+        }
+
+        
+
+        private void Cut()
+        {
+
+        }
+        private void акварельToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            brushTexture = "Акварель";
+            isEraser = false;
+            trackBarEraser.Visible = false;
+            trackBarPen.Visible = true;
+            button1.BackColor = Color.White;
+            button2.BackColor = Color.DarkGray;
+        }
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
             if (keyData == (Keys.Control | Keys.Z) && undoStack.Count > 1)
