@@ -17,6 +17,14 @@ namespace graphic_editor
         string mode;
         Pen currentPen;
         bool isEraser = false;
+
+        Rectangle selectionRect;
+        bool isSelecting = false;
+        bool hasSelection = false;
+        Bitmap clipboardBuffer = null;
+        Point pasteLocation;
+        bool isMovingSelection = false;
+        Point selectionOffset;
         public Form1()
         {
             InitializeComponent();
@@ -34,6 +42,12 @@ namespace graphic_editor
             colorDialog1.Color = button4.BackColor;
 
             UpdateCurrentPen();
+
+            var contextMenu = new ContextMenuStrip();
+            contextMenu.Items.Add("Копировать", null);
+            contextMenu.Items.Add("Вырезать", null);
+            contextMenu.Items.Add("Вставить", null);
+            pictureBox1.ContextMenuStrip = contextMenu;
         }
 
         private void UpdateCurrentPen()
@@ -41,11 +55,11 @@ namespace graphic_editor
             currentPen?.Dispose();
             if (isEraser)
             {
-                currentPen = new Pen(Color.White, trackBar1.Value);
+                currentPen = new Pen(Color.White, trackBarEraser.Value);
             }
             else
             {
-                currentPen = new Pen(button4.BackColor, trackBar1.Value);
+                currentPen = new Pen(button4.BackColor, trackBarPen.Value);
             }
             currentPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
             currentPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
@@ -111,7 +125,7 @@ namespace graphic_editor
             if (mode != "Карандаш" && e.Button == MouseButtons.Left)
             {
                 using (Graphics g = Graphics.FromImage(picture))
-                using (Pen p = new Pen(button4.BackColor, trackBar1.Value))
+                using (Pen p = new Pen(button4.BackColor, trackBarPen.Value))
                 {
                     int x = Math.Min(xclick1, e.X);
                     int y = Math.Min(yclick1, e.Y);
@@ -183,14 +197,15 @@ namespace graphic_editor
             ClearCanvas();
         }
 
-        private void карандашToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            mode = "Карандаш";
-        }
-
         private void прямоугольникToolStripMenuItem_Click(object sender, EventArgs e)
         {
             mode = "Прямоугольник";
+            isEraser = false;
+            trackBarEraser.Visible = false;
+            trackBarPen.Visible = true;
+            button1.BackColor = Color.White;
+            button2.BackColor = Color.DarkGray;
+            UpdateCurrentPen();
         }
 
         private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
@@ -202,27 +217,57 @@ namespace graphic_editor
         private void прямаяЛинияToolStripMenuItem_Click(object sender, EventArgs e)
         {
             mode = "Прямая линия";
+            isEraser = false;
+            trackBarEraser.Visible = false;
+            trackBarPen.Visible = true;
+            button1.BackColor = Color.White;
+            button2.BackColor = Color.DarkGray;
+            UpdateCurrentPen();
         }
-
-        
 
         private void овалToolStripMenuItem_Click(object sender, EventArgs e)
         {
             mode = "Овал";
+            isEraser = false;
+            trackBarEraser.Visible = false;
+            trackBarPen.Visible = true;
+            button1.BackColor = Color.White;
+            button2.BackColor = Color.DarkGray;
+            UpdateCurrentPen();
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
-            isEraser = !isEraser;
+            isEraser = true;
+            trackBarEraser.Visible = true;
+            trackBarPen.Visible = false;
             button1.BackColor = isEraser ? Color.DarkGray : Color.White;
-            mode = isEraser ? "Ластик" : "Карандаш";
+            button2.BackColor = isEraser ? Color.White : Color.DarkGray;
+            mode = "Ластик";
             UpdateCurrentPen();
         }
 
-        private void trackBar1_ValueChanged(object sender, EventArgs e)
+        private void button2_Click(object sender, EventArgs e)
+        {
+            mode = "Карандаш";
+            isEraser = false;
+            button1.BackColor = isEraser ? Color.DarkGray : Color.White;
+            button2.BackColor = isEraser ? Color.White : Color.DarkGray;
+            trackBarEraser.Visible = false;
+            trackBarPen.Visible = true;
+            UpdateCurrentPen();
+        }
+
+        private void trackBarEraser_ValueChanged(object sender, EventArgs e)
         {
             UpdateCurrentPen();
         }
+
+        private void trackBarPen_ValueChanged(object sender, EventArgs e)
+        {
+            UpdateCurrentPen();
+        }
+
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
             if (keyData == (Keys.Control | Keys.Z) && undoStack.Count > 1)
