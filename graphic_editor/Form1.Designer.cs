@@ -50,16 +50,16 @@
             this.копироватьToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.вырезатьToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.вставитьToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.кистьToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.акварельToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.мелToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.карандашToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.panel2 = new System.Windows.Forms.Panel();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
             this.colorDialog1 = new System.Windows.Forms.ColorDialog();
             this.bindingSource1 = new System.Windows.Forms.BindingSource(this.components);
-            this.кистьToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.акварельToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.мелToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.карандашToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarEraser)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarPen)).BeginInit();
@@ -257,6 +257,37 @@
             this.вставитьToolStripMenuItem.Size = new System.Drawing.Size(176, 26);
             this.вставитьToolStripMenuItem.Text = "Вставить";
             // 
+            // кистьToolStripMenuItem
+            // 
+            this.кистьToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.акварельToolStripMenuItem,
+            this.мелToolStripMenuItem,
+            this.карандашToolStripMenuItem});
+            this.кистьToolStripMenuItem.Name = "кистьToolStripMenuItem";
+            this.кистьToolStripMenuItem.Size = new System.Drawing.Size(62, 24);
+            this.кистьToolStripMenuItem.Text = "Кисть";
+            // 
+            // акварельToolStripMenuItem
+            // 
+            this.акварельToolStripMenuItem.Name = "акварельToolStripMenuItem";
+            this.акварельToolStripMenuItem.Size = new System.Drawing.Size(224, 26);
+            this.акварельToolStripMenuItem.Text = "Акварель";
+            this.акварельToolStripMenuItem.Click += new System.EventHandler(this.акварельToolStripMenuItem_Click);
+            // 
+            // мелToolStripMenuItem
+            // 
+            this.мелToolStripMenuItem.Name = "мелToolStripMenuItem";
+            this.мелToolStripMenuItem.Size = new System.Drawing.Size(224, 26);
+            this.мелToolStripMenuItem.Text = "Мел";
+            this.мелToolStripMenuItem.Click += new System.EventHandler(this.мелToolStripMenuItem_Click);
+            // 
+            // карандашToolStripMenuItem
+            // 
+            this.карандашToolStripMenuItem.Name = "карандашToolStripMenuItem";
+            this.карандашToolStripMenuItem.Size = new System.Drawing.Size(224, 26);
+            this.карандашToolStripMenuItem.Text = "Карандаш";
+            this.карандашToolStripMenuItem.Click += new System.EventHandler(this.карандашToolStripMenuItem_Click);
+            // 
             // panel2
             // 
             this.panel2.Controls.Add(this.pictureBox1);
@@ -286,35 +317,6 @@
             // saveFileDialog1
             // 
             this.saveFileDialog1.DefaultExt = "bmp";
-            // 
-            // кистьToolStripMenuItem
-            // 
-            this.кистьToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.акварельToolStripMenuItem,
-            this.мелToolStripMenuItem,
-            this.карандашToolStripMenuItem});
-            this.кистьToolStripMenuItem.Name = "кистьToolStripMenuItem";
-            this.кистьToolStripMenuItem.Size = new System.Drawing.Size(62, 24);
-            this.кистьToolStripMenuItem.Text = "Кисть";
-            // 
-            // акварельToolStripMenuItem
-            // 
-            this.акварельToolStripMenuItem.Name = "акварельToolStripMenuItem";
-            this.акварельToolStripMenuItem.Size = new System.Drawing.Size(224, 26);
-            this.акварельToolStripMenuItem.Text = "Акварель";
-            this.акварельToolStripMenuItem.Click += new System.EventHandler(this.акварельToolStripMenuItem_Click);
-            // 
-            // мелToolStripMenuItem
-            // 
-            this.мелToolStripMenuItem.Name = "мелToolStripMenuItem";
-            this.мелToolStripMenuItem.Size = new System.Drawing.Size(224, 26);
-            this.мелToolStripMenuItem.Text = "Мел";
-            // 
-            // карандашToolStripMenuItem
-            // 
-            this.карандашToolStripMenuItem.Name = "карандашToolStripMenuItem";
-            this.карандашToolStripMenuItem.Size = new System.Drawing.Size(224, 26);
-            this.карандашToolStripMenuItem.Text = "Карандаш";
             // 
             // Form1
             // 

@@ -52,36 +52,6 @@ namespace graphic_editor
             contextMenu.Items.Add("Вставить", null);
             pictureBox1.ContextMenuStrip = contextMenu;
         }
-
-        private void UpdateCurrentPen()
-        {
-            currentPen?.Dispose();
-            if (isEraser)
-            {
-                currentPen = new Pen(Color.White, trackBarEraser.Value);
-                currentPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
-                currentPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;  
-            }
-            currentPen = new Pen(button4.BackColor, trackBarPen.Value);
-            switch (brushTexture)
-            {
-                case "Акварель":
-                    currentPen.StartCap = LineCap.Round;
-                    currentPen.EndCap = LineCap.Round;
-                    currentPen.LineJoin = LineJoin.Round;
-                    currentPen.Width = trackBarPen.Value;
-                    Color transparentColor = Color.FromArgb(50, button4.BackColor);
-                    currentPen.Color = transparentColor;
-                    break;
-
-                default:
-                    currentPen.StartCap = LineCap.Round;
-                    currentPen.EndCap = LineCap.Round;
-                    currentPen.LineJoin = LineJoin.Round;
-                    break;
-            }
-               
-        }
         private Random random = new Random();
         private void SaveState(bool isInitialState = false)
         {
@@ -92,48 +62,125 @@ namespace graphic_editor
             }
             undoStack.Push(new Bitmap(picture));
         }
+        private void UpdateCurrentPen()
+        {
+            currentPen?.Dispose();
+            if (isEraser)
+            {
+                currentPen = new Pen(Color.White, trackBarEraser.Value);
+                currentPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
+                currentPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
+            }
+            else
+            {
+                currentPen = new Pen(button4.BackColor, trackBarPen.Value);
+                currentPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
+                currentPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
+            }
+        }
 
+        private void DrawBrush(Graphics g, Point start, Point end)
+        {
+            switch (brushTexture)
+            {
+                case "Акварель":
+                    Watercolor(g, start, end);
+                    break;
+                case "Мел":
+                    Chalk(g, start, end);
+                    break;
+                case "Карандаш":
+                    Pencil(g, start, end);
+                    break;
+                default:
+                    g.DrawLine(currentPen, start.X, start.Y, end.X, end.Y);
+                    break;
+            }
+        }
+
+        private void Watercolor(Graphics g, Point start, Point end)
+        {
+            float distance = (float)Math.Sqrt(Math.Pow(end.X - start.X, 2) + Math.Pow(end.Y - start.Y, 2));
+            int steps = Math.Max(1, (int)(distance / 2));
+            for (int i = 0; i <= steps; i++)
+            {
+                float t = (float)i / steps;
+                int currentX = (int)(start.X + t * (end.X - start.X));
+                int currentY = (int)(start.Y + t * (end.Y - start.Y));
+                int maxRadius = (int)(currentPen.Width * 0.5f);
+                for (int j = 0; j < 20; j++)
+                {
+                    int size = random.Next(maxRadius / 2, maxRadius);
+                    int xOffset = random.Next(-size / 2, size / 2);
+                    int yOffset = random.Next(-size / 2, size / 2);
+                    int alpha = 10;
+
+                    using (SolidBrush b = new SolidBrush(Color.FromArgb(alpha, button4.BackColor)))
+                    {
+                        g.FillEllipse(b, currentX + xOffset - size / 2, currentY + yOffset - size / 2, size, size);
+                    }
+                }
+            }
+        }
+
+        private void Chalk(Graphics g, Point start, Point end)
+        {
+            float dotSpacing = Math.Max(2, trackBarPen.Value * 0.3f);
+            float distance = (float)Math.Sqrt(Math.Pow(end.X - start.X, 2) + Math.Pow(end.Y - start.Y, 2));
+            int steps = Math.Max(1, (int)(distance / dotSpacing));
+            int lineCount = Math.Max(1, (int)(trackBarPen.Value * 0.3f));
+
+            for (int lineOffset = 0; lineOffset < lineCount; lineOffset++)
+            {
+                for (int i = 0; i <= steps; i++)
+                {
+                    if (random.Next(0, 100) < 30) continue;
+                    float t = (float)i / steps;
+                    int currentX = (int)(start.X + t * (end.X - start.X)) + lineOffset * 2;
+                    int currentY = (int)(start.Y + t * (end.Y - start.Y)) + lineOffset * 2;
+
+                    if (random.Next(0, 100) < 70)
+                    {
+                        int dotSize = random.Next(1, 4);
+                        g.FillEllipse(new SolidBrush(button4.BackColor), currentX - dotSize / 2, currentY - dotSize / 2, dotSize, dotSize);
+                    }
+                }
+            }
+        }
+        private void Pencil(Graphics g, Point start, Point end)
+        {
+            float roughness = 3f + currentPen.Width * 0.2f;
+            float distance = (float)Math.Sqrt(Math.Pow(end.X - start.X, 2) + Math.Pow(end.Y - start.Y, 2));
+            int steps = Math.Max(1, (int)(distance * (2f + currentPen.Width * 0.5f)));
+
+            for (int i = 0; i <= steps; i++)
+            {
+                float t = (float)i / steps;
+                int currentX = (int)(start.X + t * (end.X - start.X));
+                int currentY = (int)(start.Y + t * (end.Y - start.Y));
+
+                int xOffset = (int)((random.NextDouble() - 0.5) * roughness * 2);
+                int yOffset = (int)((random.NextDouble() - 0.5) * roughness * 2);
+
+                int textureX = currentX + xOffset;
+                int textureY = currentY + yOffset;
+
+
+                using (Pen texturePen = new Pen(button4.BackColor, 1f))
+                {
+                    g.DrawLine(texturePen, textureX, textureY, textureX + random.Next(-1, 2), textureY + random.Next(-1, 2));
+                }
+            }
+        }
         private void pictureBox1_MouseMove(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left)
             {
-                
                 if (mode == "Карандаш" || mode == "Ластик")
                 {
                     using (Graphics g = Graphics.FromImage(picture))
                     {
-                        if (brushTexture == "Акварель")
-                        {
-                            float distance = (float)Math.Sqrt(Math.Pow(e.X - x1, 2) + Math.Pow(e.Y - y1, 2));
-                            int steps = Math.Max(1, (int)(distance / 2));
-                            for (int i = 0; i <= steps; i++)
-                            {
-                                float t = (float)i / steps;
-                                int currentX = (int)(x1 + t * (e.X - x1));
-                                int currentY = (int)(y1 + t * (e.Y - y1));
-                                int maxRadius = (int)(currentPen.Width * 0.5f);
-                                for (int j = 0; j < 20; j++)
-                                {
-                                    int size = random.Next(maxRadius / 2, maxRadius);
-                                    int xOffset = random.Next(-size / 2, size / 2);
-                                    int yOffset = random.Next(-size / 2, size / 2);
-                                    int alpha = 10;
-
-                                    using (SolidBrush b = new SolidBrush(Color.FromArgb(alpha, button4.BackColor)))
-                                    {
-                                        g.FillEllipse(b,
-                                            currentX + xOffset - size / 2,
-                                            currentY + yOffset - size / 2,
-                                            size, size);
-                                    }
-                                }
-                            }
-                        }
-                        else
-                        {
-                            g.DrawLine(currentPen, x1, y1, e.X, e.Y);
-                        }
-                            
+                        DrawBrush(g, new Point(x1, y1), new Point(e.X, e.Y));
                     }
                     pictureBox1.Image = picture;
                 }
@@ -166,7 +213,6 @@ namespace graphic_editor
             }
             x1 = e.X;
             y1 = e.Y;
-
         }
 
         private void pictureBox1_MouseUp(object sender, MouseEventArgs e)
@@ -342,6 +388,7 @@ namespace graphic_editor
         {
 
         }
+
         private void акварельToolStripMenuItem_Click(object sender, EventArgs e)
         {
             brushTexture = "Акварель";
@@ -351,6 +398,27 @@ namespace graphic_editor
             button1.BackColor = Color.White;
             button2.BackColor = Color.DarkGray;
         }
+
+        private void карандашToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            brushTexture = "Карандаш";
+            isEraser = false;
+            trackBarEraser.Visible = false;
+            trackBarPen.Visible = true;
+            button1.BackColor = Color.White;
+            button2.BackColor = Color.DarkGray;
+        }
+
+        private void мелToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            brushTexture = "Мел";
+            isEraser = false;
+            trackBarEraser.Visible = false;
+            trackBarPen.Visible = true;
+            button1.BackColor = Color.White;
+            button2.BackColor = Color.DarkGray;
+        }
+
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
             if (keyData == (Keys.Control | Keys.Z) && undoStack.Count > 1)
