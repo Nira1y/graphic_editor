@@ -58,12 +58,29 @@ namespace graphic_editor
         {
             if (isFileOpened && !isInitialState)
             {
-                undoStack.Clear();
+                while (undoStack.Count > 1)
+                {
+                    undoStack.Pop()?.Dispose();
+                }
                 isFileOpened = false;
             }
-            undoStack.Push(new Bitmap(picture));
+
+            if (undoStack.Count >= 21)
+            {
+                Bitmap lastState = undoStack.Peek();
+                while (undoStack.Count > 1)
+                {
+                    undoStack.Pop()?.Dispose();
+                }
+                undoStack.Clear();
+                undoStack.Push(lastState);
+            }
+
+            var stateCopy = new Bitmap(picture);
+            undoStack.Push(stateCopy);
         }
-        private void UpdateCurrentPen()
+
+        private void UpdateCurrentPen() 
         {
             currentPen?.Dispose();
             if (isEraser)
@@ -716,17 +733,38 @@ namespace graphic_editor
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
-            if (keyData == (Keys.Control | Keys.Z) && undoStack.Count > 1)
+            if (keyData == (Keys.Control | Keys.Z))
             {
-                var oldPicture = picture;
-                undoStack.Pop()?.Dispose();
-                picture = new Bitmap(undoStack.Peek());
-                oldPicture?.Dispose();
-                pictureBox1.Image = picture;
-                return true;
+                if (undoStack.Count > 1)
+                {
+                    Bitmap oldPicture = picture;
+                    Bitmap currentState = undoStack.Pop();
+                    currentState?.Dispose();
+                    if (undoStack.Count > 0)
+                    {
+                        Bitmap previousState = undoStack.Peek();
+                        try
+                        {
+                            picture = new Bitmap(previousState);
+                            pictureBox1.Image = picture;
+                            oldPicture?.Dispose();
+                            return true;
+                        }
+                        catch
+                        {
+                            picture = oldPicture;
+                            undoStack.Push(new Bitmap(oldPicture));
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        picture = oldPicture;
+                        undoStack.Push(new Bitmap(oldPicture));
+                    }
+                }
             }
             return base.ProcessCmdKey(ref msg, keyData);
         }
-
     }
 }
