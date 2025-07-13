@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+
 
 namespace graphic_editor
 {
@@ -26,8 +26,8 @@ namespace graphic_editor
         bool hasSelection = false;
         Bitmap clipboardBuffer = null;
         Point pasteLocation;
-        bool isMovingSelection = false;
-        Point selectionOffset;
+        bool isFilling = false;
+
         public Form1()
         {
             InitializeComponent();
@@ -47,9 +47,9 @@ namespace graphic_editor
             UpdateCurrentPen();
 
             var contextMenu = new ContextMenuStrip();
-            contextMenu.Items.Add("Копировать", null);
-            contextMenu.Items.Add("Вырезать", null);
-            contextMenu.Items.Add("Вставить", null);
+            contextMenu.Items.Add("Копировать", null, (s, e) => Copy());
+            contextMenu.Items.Add("Вырезать", null, (s, e) => Cut());
+            contextMenu.Items.Add("Вставить", null, (s, e) => Paste());
             pictureBox1.ContextMenuStrip = contextMenu;
         }
         private Random random = new Random();
@@ -172,6 +172,83 @@ namespace graphic_editor
                 }
             }
         }
+        private void FillArea(int x, int y, Color targetColor, Color replacementColor)
+        {
+            bool isUnbounded = IsAreaUnbounded(x, y, targetColor);
+
+            if (isUnbounded)
+            {
+                using (Graphics g = Graphics.FromImage(picture))
+                using (SolidBrush brush = new SolidBrush(replacementColor))
+                {
+                    g.FillRectangle(brush, 0, 0, picture.Width, picture.Height);
+                }
+            }
+            else
+            {
+                Bitmap bmp = picture;
+                Stack<Point> pixels = new Stack<Point>();
+                pixels.Push(new Point(x, y));
+                bool[,] visited = new bool[bmp.Width, bmp.Height];
+
+                while (pixels.Count > 0)
+                {
+                    Point a = pixels.Pop();
+                    if (a.X < 0 || a.X >= bmp.Width || a.Y < 0 || a.Y >= bmp.Height || visited[a.X, a.Y])
+                        continue;
+
+                    Color current = bmp.GetPixel(a.X, a.Y);
+                    if (!ColorsAreSimilar(current, targetColor, 10))
+                        continue;
+
+                    bmp.SetPixel(a.X, a.Y, replacementColor);
+                    visited[a.X, a.Y] = true;
+
+                    pixels.Push(new Point(a.X - 1, a.Y));
+                    pixels.Push(new Point(a.X + 1, a.Y));
+                    pixels.Push(new Point(a.X, a.Y - 1));
+                    pixels.Push(new Point(a.X, a.Y + 1));
+                }
+            }
+
+            pictureBox1.Image = picture;
+        }
+
+        private bool IsAreaUnbounded(int startX, int startY, Color targetColor)
+        {
+            Bitmap bmp = picture;
+            Queue<Point> queue = new Queue<Point>();
+            bool[,] visited = new bool[bmp.Width, bmp.Height];
+            queue.Enqueue(new Point(startX, startY));
+
+            while (queue.Count > 0)
+            {
+                Point p = queue.Dequeue();
+                if (p.X <= 0 || p.Y <= 0 || p.X >= bmp.Width - 1 || p.Y >= bmp.Height - 1)
+                    return true;
+
+                if (visited[p.X, p.Y])
+                    continue;
+
+                visited[p.X, p.Y] = true;
+                if (ColorsAreSimilar(bmp.GetPixel(p.X - 1, p.Y), targetColor, 10))
+                    queue.Enqueue(new Point(p.X - 1, p.Y));
+                if (ColorsAreSimilar(bmp.GetPixel(p.X + 1, p.Y), targetColor, 10))
+                    queue.Enqueue(new Point(p.X + 1, p.Y));
+                if (ColorsAreSimilar(bmp.GetPixel(p.X, p.Y - 1), targetColor, 10))
+                    queue.Enqueue(new Point(p.X, p.Y - 1));
+                if (ColorsAreSimilar(bmp.GetPixel(p.X, p.Y + 1), targetColor, 10))
+                    queue.Enqueue(new Point(p.X, p.Y + 1));
+            }
+
+            return false;
+        }
+        private bool ColorsAreSimilar(Color c1, Color c2, int tolerance)
+        {
+            return Math.Abs(c1.R - c2.R) < tolerance &&
+                   Math.Abs(c1.G - c2.G) < tolerance &&
+                   Math.Abs(c1.B - c2.B) < tolerance;
+        }
         private void pictureBox1_MouseMove(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left)
@@ -183,6 +260,27 @@ namespace graphic_editor
                         DrawBrush(g, new Point(x1, y1), new Point(e.X, e.Y));
                     }
                     pictureBox1.Image = picture;
+                }
+                else if (mode == "Выделение")
+                {
+
+                    int x = Math.Min(xclick1, e.X);
+                    int y = Math.Min(yclick1, e.Y);
+                    int width = Math.Abs(e.X - xclick1);
+                    int height = Math.Abs(e.Y - yclick1);
+
+                    selectionRect = new Rectangle(x, y, width, height);
+
+                    using (Graphics g = Graphics.FromImage(previewPicture))
+                    {
+                        g.DrawImage(picture, 0, 0);
+                        using (Pen selectPen = new Pen(Color.Blue, 1))
+                        {
+                            selectPen.DashStyle = DashStyle.Dash;
+                            g.DrawRectangle(selectPen, selectionRect);
+                        }
+                    }
+                    pictureBox1.Image = previewPicture;
                 }
                 else
                 {
@@ -217,34 +315,45 @@ namespace graphic_editor
 
         private void pictureBox1_MouseUp(object sender, MouseEventArgs e)
         {
-            if (mode != "Карандаш" && e.Button == MouseButtons.Left)
+            if (e.Button == MouseButtons.Left)
             {
-                using (Graphics g = Graphics.FromImage(picture))
-                using (Pen p = new Pen(button4.BackColor, trackBarPen.Value))
+                if (mode == "Выделение")
                 {
-                    int x = Math.Min(xclick1, e.X);
-                    int y = Math.Min(yclick1, e.Y);
-                    int width = Math.Abs(e.X - xclick1);
-                    int height = Math.Abs(e.Y - yclick1);
-
-                    switch (mode)
-                    {
-                        case "Прямоугольник":
-                            g.DrawRectangle(currentPen, x, y, width, height);
-                            break;
-                        case "Овал":
-                            g.DrawEllipse(currentPen, x, y, width, height);
-                            break;
-                        case "Прямая линия":
-                            g.DrawLine(currentPen, xclick1, yclick1, e.X, e.Y);
-                            break;
-
-                    }
+                    hasSelection = true;
+                    isSelecting = false;
+                    pictureBox1.Image = picture;
                 }
-                pictureBox1.Image = picture;
-                
+                else if (mode != "Карандаш")
+                {
+                    using (Graphics g = Graphics.FromImage(picture))
+                    using (Pen p = new Pen(button4.BackColor, trackBarPen.Value))
+                    {
+                        int x = Math.Min(xclick1, e.X);
+                        int y = Math.Min(yclick1, e.Y);
+                        int width = Math.Abs(e.X - xclick1);
+                        int height = Math.Abs(e.Y - yclick1);
+
+                        switch (mode)
+                        {
+                            case "Прямоугольник":
+                                g.DrawRectangle(currentPen, x, y, width, height);
+                                break;
+                            case "Овал":
+                                g.DrawEllipse(currentPen, x, y, width, height);
+                                break;
+                            case "Прямая линия":
+                                g.DrawLine(currentPen, xclick1, yclick1, e.X, e.Y);
+                                break;
+                        }
+                    }
+                    pictureBox1.Image = picture;
+                    SaveState();
+                }
+                else if (mode == "Карандаш")
+                {
+                    SaveState();
+                }
             }
-            SaveState();
         }
 
 
@@ -308,6 +417,13 @@ namespace graphic_editor
         {
             xclick1 = e.X;
             yclick1 = e.Y;
+
+            if (mode == "Заливка" && e.Button == MouseButtons.Left)
+            {
+                Color targetColor = picture.GetPixel(e.X, e.Y);
+                FillArea(e.X, e.Y, targetColor, button4.BackColor);
+                SaveState();
+            }
         }
 
         private void прямаяЛинияToolStripMenuItem_Click(object sender, EventArgs e)
@@ -367,26 +483,98 @@ namespace graphic_editor
         {
             UpdateCurrentPen();
         }
-        private void drawSelectionPreview()
-        {
-
-        }
 
         private void Copy()
         {
-
+            if (hasSelection && selectionRect.Width > 0 && selectionRect.Height > 0)
+            {
+                Bitmap selectedArea = new Bitmap(selectionRect.Width, selectionRect.Height);
+                using (Graphics g = Graphics.FromImage(selectedArea))
+                {
+                    g.DrawImage(picture, new Rectangle(0, 0, selectedArea.Width, selectedArea.Height),
+                                 selectionRect, GraphicsUnit.Pixel);
+                }
+                clipboardBuffer = selectedArea;
+                Clipboard.SetImage(selectedArea);
+            }
+            else
+            {
+                clipboardBuffer = new Bitmap(picture);
+                Clipboard.SetImage(picture);
+            }
         }
 
         private void Paste()
         {
+            if (Clipboard.ContainsImage())
+            {
+                Image imageToPaste = Clipboard.GetImage();
 
+                if (imageToPaste != null)
+                {
+                    pasteLocation = new Point(
+                        Math.Max(0, Math.Min(x1 - imageToPaste.Width / 2, picture.Width - imageToPaste.Width)),
+                        Math.Max(0, Math.Min(y1 - imageToPaste.Height / 2, picture.Height - imageToPaste.Height))
+                    );
+
+
+                    using (Graphics g = Graphics.FromImage(picture))
+                    {
+                        g.DrawImage(imageToPaste, pasteLocation);
+                    }
+
+                    pictureBox1.Image = picture;
+                    selectionRect = new Rectangle(pasteLocation, imageToPaste.Size);
+                    hasSelection = true;
+                    isSelecting = false;
+                    clipboardBuffer = new Bitmap(imageToPaste);
+                }
+            }
+            else if (clipboardBuffer != null)
+            {
+                pasteLocation = new Point(
+                    Math.Max(0, Math.Min(x1 - clipboardBuffer.Width / 2, picture.Width - clipboardBuffer.Width)),
+                    Math.Max(0, Math.Min(y1 - clipboardBuffer.Height / 2, picture.Height - clipboardBuffer.Height))
+                );
+
+                using (Graphics g = Graphics.FromImage(picture))
+                {
+                    g.DrawImage(clipboardBuffer, pasteLocation);
+                }
+
+                pictureBox1.Image = picture;
+                selectionRect = new Rectangle(pasteLocation, clipboardBuffer.Size);
+                hasSelection = true;
+                isSelecting = false;
+            }
+            SaveState();
         }
-
-        
-
         private void Cut()
         {
+            if (hasSelection && selectionRect.Width > 0 && selectionRect.Height > 0)
+            {
+                Copy();
+                using (Graphics g = Graphics.FromImage(picture))
+                {
+                    g.FillRectangle(Brushes.White, selectionRect);
+                }
 
+                pictureBox1.Image = picture;
+
+
+                hasSelection = false;
+                isSelecting = false;
+                pictureBox1.Invalidate();
+            }
+        }
+
+        private void StartSelection()
+        {
+            mode = "Выделение";
+            isSelecting = true;
+            hasSelection = false;
+            button1.BackColor = Color.White;
+            button2.BackColor = Color.DarkGray;
         }
 
         private void акварельToolStripMenuItem_Click(object sender, EventArgs e)
@@ -405,6 +593,38 @@ namespace graphic_editor
             isEraser = false;
             trackBarEraser.Visible = false;
             trackBarPen.Visible = true;
+            button1.BackColor = Color.White;
+            button2.BackColor = Color.DarkGray;
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            StartSelection();
+        }
+
+        private void копироватьToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Copy();
+        }
+
+        private void вырезатьToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Cut();
+        }
+
+        private void вставитьToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Paste();
+        }
+
+        private void buttonFill_Click(object sender, EventArgs e)
+        {
+            mode = "Заливка";
+            isFilling = true;
+            isEraser = false;
+            brushTexture = null;
+            trackBarEraser.Visible = false;
+            trackBarPen.Visible = false;
             button1.BackColor = Color.White;
             button2.BackColor = Color.DarkGray;
         }
