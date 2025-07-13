@@ -86,5 +86,11 @@
   <ItemGroup>
     <None Include="Properties\pen.png" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Properties\bucket.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Properties\pipette.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -20,9 +20,10 @@ namespace graphic_editor
         string brushTexture = "Обычная";
         Pen currentPen;
         bool isEraser = false;
+        bool isPipette = false;
 
         Rectangle selectionRect;
-        bool isSelecting = false;
+        bool isSelecting;
         bool hasSelection = false;
         Bitmap clipboardBuffer = null;
         Point pasteLocation;
@@ -76,6 +77,18 @@ namespace graphic_editor
                 currentPen = new Pen(button4.BackColor, trackBarPen.Value);
                 currentPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
                 currentPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
+            }
+        }
+
+        private void PickColor(int x, int y)
+        {
+            if (x >= 0 && x < picture.Width && y >= 0 && y < picture.Height)
+            {
+                Color pickedColor = picture.GetPixel(x, y);
+                button4.BackColor = pickedColor;
+                colorDialog1.Color = pickedColor;
+                isEraser = false;
+                UpdateCurrentPen();
             }
         }
 
@@ -356,7 +369,6 @@ namespace graphic_editor
             }
         }
 
-
         private void buttonSelectColor_Click(object sender, EventArgs e)
         {
             if (colorDialog1.ShowDialog() == DialogResult.OK)
@@ -418,11 +430,33 @@ namespace graphic_editor
             xclick1 = e.X;
             yclick1 = e.Y;
 
-            if (mode == "Заливка" && e.Button == MouseButtons.Left)
+            if (isPipette && e.Button == MouseButtons.Left)
+            {
+                PickColor(e.X, e.Y);
+                isPipette = false;
+                buttonPipette.BackColor = Color.White;
+                pictureBox1.Cursor = Cursors.Default;
+            }
+            else if (isFilling && e.Button == MouseButtons.Left)
             {
                 Color targetColor = picture.GetPixel(e.X, e.Y);
                 FillArea(e.X, e.Y, targetColor, button4.BackColor);
-                SaveState();
+            }
+            else if ((mode == "Карандаш" || mode == "Ластик") && e.Button == MouseButtons.Left)
+            {
+                using (Graphics g = Graphics.FromImage(picture))
+                {
+                    if (brushTexture == "Обычная")
+                    {
+                        g.FillEllipse(new SolidBrush(currentPen.Color), 
+                            e.X - currentPen.Width / 2, e.Y - currentPen.Width / 2, currentPen.Width, currentPen.Width);
+                    }
+                    else
+                    {
+                        DrawBrush(g, new Point(e.X, e.Y), new Point(e.X, e.Y));
+                    }
+                }
+                pictureBox1.Image = picture;
             }
         }
 
@@ -453,10 +487,14 @@ namespace graphic_editor
         private void button1_Click(object sender, EventArgs e)
         {
             isEraser = true;
+            isFilling = false;
+            isPipette = false;
             trackBarEraser.Visible = true;
             trackBarPen.Visible = false;
             button1.BackColor = isEraser ? Color.DarkGray : Color.White;
             button2.BackColor = isEraser ? Color.White : Color.DarkGray;
+            buttonFill.BackColor = isFilling ? Color.DarkGray: Color.White;
+            buttonPipette.BackColor = isPipette ? Color.DarkGray: Color.White;
             mode = "Ластик";
             brushTexture = "Обычная";
             UpdateCurrentPen();
@@ -466,9 +504,13 @@ namespace graphic_editor
         {
             mode = "Карандаш";
             brushTexture = "Обычная";
+            isPipette = false;
             isEraser = false;
+            isFilling = false;
             button1.BackColor = isEraser ? Color.DarkGray : Color.White;
             button2.BackColor = isEraser ? Color.White : Color.DarkGray;
+            buttonFill.BackColor = isFilling ? Color.DarkGray : Color.White;
+            buttonPipette.BackColor = isPipette ? Color.DarkGray : Color.White;
             trackBarEraser.Visible = false;
             trackBarPen.Visible = true;
             UpdateCurrentPen();
@@ -491,8 +533,7 @@ namespace graphic_editor
                 Bitmap selectedArea = new Bitmap(selectionRect.Width, selectionRect.Height);
                 using (Graphics g = Graphics.FromImage(selectedArea))
                 {
-                    g.DrawImage(picture, new Rectangle(0, 0, selectedArea.Width, selectedArea.Height),
-                                 selectionRect, GraphicsUnit.Pixel);
+                    g.DrawImage(picture, new Rectangle(0, 0, selectedArea.Width, selectedArea.Height), selectionRect, GraphicsUnit.Pixel);
                 }
                 clipboardBuffer = selectedArea;
                 Clipboard.SetImage(selectedArea);
@@ -549,6 +590,7 @@ namespace graphic_editor
             }
             SaveState();
         }
+
         private void Cut()
         {
             if (hasSelection && selectionRect.Width > 0 && selectionRect.Height > 0)
@@ -619,14 +661,47 @@ namespace graphic_editor
 
         private void buttonFill_Click(object sender, EventArgs e)
         {
-            mode = "Заливка";
-            isFilling = true;
+            isFilling = !isFilling;
+            isPipette = false;
             isEraser = false;
             brushTexture = null;
             trackBarEraser.Visible = false;
             trackBarPen.Visible = false;
             button1.BackColor = Color.White;
-            button2.BackColor = Color.DarkGray;
+            button2.BackColor = Color.White;
+            buttonFill.BackColor = isFilling ? Color.DarkGray : Color.White;
+            buttonPipette.BackColor = isPipette ? Color.DarkGray : Color.White;
+        }
+
+        private void buttonPipette_Click(object sender, EventArgs e)
+        {
+            isPipette = !isPipette;
+            isFilling = false;
+            isEraser = false;
+
+            buttonPipette.BackColor = isPipette ? Color.DarkGray : Color.White;
+            button1.BackColor = Color.White;
+            button2.BackColor = Color.White;
+            buttonFill.BackColor = Color.White;
+
+            if (isPipette)
+            {
+                pictureBox1.Cursor = Cursors.Cross;    
+            }
+            else
+            {
+                pictureBox1.Cursor = Cursors.Default;
+            }
+        }
+
+        private void выйтиToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            DialogResult result = MessageBox.Show("Вы уверены, что хотите выйти?", "Выход", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+            if (result == DialogResult.Yes)
+            {
+                Application.Exit();
+            }
         }
 
         private void мелToolStripMenuItem_Click(object sender, EventArgs e)
@@ -643,12 +718,15 @@ namespace graphic_editor
         {
             if (keyData == (Keys.Control | Keys.Z) && undoStack.Count > 1)
             {
-                undoStack.Pop();
+                var oldPicture = picture;
+                undoStack.Pop()?.Dispose();
                 picture = new Bitmap(undoStack.Peek());
+                oldPicture?.Dispose();
                 pictureBox1.Image = picture;
                 return true;
             }
             return base.ProcessCmdKey(ref msg, keyData);
         }
+
     }
 }
